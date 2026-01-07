@@ -22,12 +22,12 @@ jobs:
           rustup default 1.82
       - name: "Build"
         run: |
-          cargo build -p jotdown
+          cargo build -p jotup
       - name: "Run tests"
         env:
             RUSTDOCFLAGS: -D warnings
         run: |
-          cargo test -p jotdown
+          cargo test -p jotup
   test_unit_all:
     name: Unit test all crates (stable)
     runs-on: ubuntu-latest
