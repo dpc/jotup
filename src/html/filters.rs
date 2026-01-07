@@ -17,7 +17,7 @@ use crate::{Attributes, Container, Event, Render, RenderOutput};
 /// <p>foo</p>
 /// ```
 /// "#;
-/// let out = jotdown::html::Renderer::minified()
+/// let out = jotup::html::Renderer::minified()
 ///   .sanitize()
 ///   .render_into_document(src)
 ///   .unwrap();

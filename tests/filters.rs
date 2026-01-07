@@ -38,7 +38,7 @@ where
 fn rickroll_me() {
     use jotup::RenderOutputExt;
     let src = "[interesting link](https://example.com)";
-    let out = RickrollRenderer(jotdown::html::Renderer::minified())
+    let out = RickrollRenderer(jotup::html::Renderer::minified())
         .render_into_document(src)
         .unwrap();
 

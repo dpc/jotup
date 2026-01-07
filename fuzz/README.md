@@ -1,6 +1,6 @@
-# Fuzzing for jotdown
+# Fuzzing for jotup
 
-This directory contains fuzzing targets for jotdown using cargo-fuzz.
+This directory contains fuzzing targets for jotup using cargo-fuzz.
 
 ## Prerequisites
 

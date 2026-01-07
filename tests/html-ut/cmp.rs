@@ -4,9 +4,9 @@ macro_rules! compare {
         use jotup::Render;
         let src = $src;
         let expected = $expected;
-        let p = jotdown::Parser::new(src);
+        let p = jotup::Parser::new(src);
         let mut actual = String::new();
-        jotdown::html::Renderer::default()
+        jotup::html::Renderer::default()
             .push(p, &mut actual)
             .unwrap();
         assert_eq!(

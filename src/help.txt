@@ -1,4 +1,4 @@
-usage: jotdown [option] [file]
+usage: jotup [option] [file]
 
 arguments:
     file            a djot source file. use a dash (`-`) or no argument
