@@ -9,8 +9,8 @@ pub fn parse(data: &[u8]) {
     if let Ok(s) = std::str::from_utf8(data) {
         let whitelist_whitespace = s.contains('{') && s.contains('}'); // attributes are outside events
         let mut open = Vec::new();
-        let mut last = (jotdown::Event::Str("".into()), 0..0);
-        for (event, range) in jotdown::Parser::new(s).into_offset_iter() {
+        let mut last = (jotup::Event::Str("".into()), 0..0);
+        for (event, range) in jotup::Parser::new(s).into_offset_iter() {
             // no overlap, out of order
             assert!(
                 last.1.end <= range.start
@@ -18,8 +18,8 @@ pub fn parse(data: &[u8]) {
                 || (
                     matches!(
                         last.0,
-                        jotdown::Event::Start(jotdown::Container::Caption, ..)
-                        | jotdown::Event::End
+                        jotup::Event::Start(jotup::Container::Caption, ..)
+                        | jotup::Event::End
                     )
                     && range.end <= last.1.start
                 ),
@@ -33,7 +33,7 @@ pub fn parse(data: &[u8]) {
             // range is valid unicode, does not cross char boundary
             let _ = &s[range];
             match event {
-                jotdown::Event::Start(c, ..) => open.push(c.clone()),
+                jotup::Event::Start(c, ..) => open.push(c.clone()),
                 _ => {}
             }
         }
@@ -55,9 +55,9 @@ pub fn html(data: &[u8]) {
     }
     if let Ok(s) = std::str::from_utf8(data) {
         if !s.contains("=html") {
-            let p = jotdown::Parser::new(s);
+            let p = jotup::Parser::new(s);
             let mut html = "<!DOCTYPE html>\n".to_string();
-            jotdown::html::Renderer::default()
+            jotup::html::Renderer::default()
                 .with_fmt_writer(&mut html)
                 .render_events(p)
                 .unwrap();
