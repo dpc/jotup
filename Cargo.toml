@@ -30,6 +30,7 @@ members = [
   "tests/html-ut",
 ]
 exclude = ["fuzz"]
+resolver = "2"
 
 [[bin]]
 name = "jotup"
@@ -51,3 +52,9 @@ lto = true
 
 [profile.release.package.jotup_wasm]
 opt-level = 's'
+
+[profile.ci]
+inherits = "dev"
+incremental = false
+debug = "line-tables-only"
+lto = "off"
