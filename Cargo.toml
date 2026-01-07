@@ -29,7 +29,7 @@ members = [
   "tests/html-ref",
   "tests/html-ut",
 ]
-exclude = ["tests/afl", "fuzz"]
+exclude = ["fuzz"]
 
 [[bin]]
 name = "jotup"

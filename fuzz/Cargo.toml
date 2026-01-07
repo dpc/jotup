@@ -11,9 +11,22 @@ cargo-fuzz = true
 libfuzzer-sys = "0.4"
 jotup = { path = "..", features = ["html", "async"] }
 tokio = { version = "1.0", features = ["rt", "macros"] }
+html5ever = "0.26"
 
 [[bin]]
 name = "compare_renderers"
 path = "fuzz_targets/compare_renderers.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "parse"
+path = "fuzz_targets/parse.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "html"
+path = "fuzz_targets/html.rs"
 test = false
 doc = false

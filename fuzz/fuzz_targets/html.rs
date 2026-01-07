@@ -1,59 +1,26 @@
+#![no_main]
+
 use html5ever::tendril;
 use html5ever::tendril::TendrilSink;
 use html5ever::tokenizer;
 use html5ever::tree_builder;
 use jotup::RenderExt;
+use libfuzzer_sys::fuzz_target;
 
-/// Perform sanity checks on events.
-pub fn parse(data: &[u8]) {
-    if let Ok(s) = std::str::from_utf8(data) {
-        let whitelist_whitespace = s.contains('{') && s.contains('}'); // attributes are outside events
-        let mut open = Vec::new();
-        let mut last = (jotup::Event::Str("".into()), 0..0);
-        for (event, range) in jotup::Parser::new(s).into_offset_iter() {
-            // no overlap, out of order
-            assert!(
-                last.1.end <= range.start
-                // caption event is before table rows but src is after
-                || (
-                    matches!(
-                        last.0,
-                        jotup::Event::Start(jotup::Container::Caption, ..)
-                        | jotup::Event::End
-                    )
-                    && range.end <= last.1.start
-                ),
-                "{} > {} {:?} {:?}",
-                last.1.end,
-                range.start,
-                last.0,
-                event
-            );
-            last = (event.clone(), range.clone());
-            // range is valid unicode, does not cross char boundary
-            let _ = &s[range];
-            match event {
-                jotup::Event::Start(c, ..) => open.push(c.clone()),
-                _ => {}
-            }
-        }
-        // no missing close
-        assert_eq!(open, &[]);
-        // only whitespace after last event
-        assert!(
-            whitelist_whitespace || s[last.1.end..].chars().all(char::is_whitespace),
-            "non whitespace {:?}",
-            &s[last.1.end..],
-        );
-    }
-}
-
-/// Validate rendered html output.
-pub fn html(data: &[u8]) {
+/// Validate that rendered HTML output is well-formed.
+///
+/// This fuzzer:
+/// - Renders djot input to HTML
+/// - Validates HTML using html5ever parser
+/// - Checks for unexpected HTML errors (with whitelist)
+fuzz_target!(|data: &[u8]| {
+    // Skip inputs with null bytes
     if data.iter().any(|i| *i == 0) {
         return;
     }
+    
     if let Ok(s) = std::str::from_utf8(data) {
+        // Skip raw HTML blocks as they can contain arbitrary HTML
         if !s.contains("=html") {
             let p = jotup::Parser::new(s);
             let mut html = "<!DOCTYPE html>\n".to_string();
@@ -64,21 +31,12 @@ pub fn html(data: &[u8]) {
             validate_html(&html);
         }
     }
-}
+});
 
 fn validate_html(html: &str) {
-    #[cfg(feature = "debug")]
-    let mut has_error = false;
-
     html5ever::parse_document(
         Dom {
             names: Vec::new(),
-            #[cfg(feature = "debug")]
-            has_error: &mut has_error,
-            #[cfg(feature = "debug")]
-            line_no: 1,
-            #[cfg(not(feature = "debug"))]
-            _lifetime: std::marker::PhantomData,
         },
         html5ever::ParseOpts {
             tokenizer: tokenizer::TokenizerOpts {
@@ -95,29 +53,13 @@ fn validate_html(html: &str) {
     .from_utf8()
     .read_from(&mut std::io::Cursor::new(html))
     .unwrap();
-
-    #[cfg(feature = "debug")]
-    if has_error {
-        eprintln!("html:");
-        html.split('\n').enumerate().for_each(|(i, l)| {
-            eprintln!("{:>2}:{}", i + 1, l);
-        });
-        eprintln!("\n");
-        panic!();
-    }
 }
 
-struct Dom<'a> {
+struct Dom {
     names: Vec<html5ever::QualName>,
-    #[cfg(feature = "debug")]
-    has_error: &'a mut bool,
-    #[cfg(feature = "debug")]
-    line_no: u64,
-    #[cfg(not(feature = "debug"))]
-    _lifetime: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a> tree_builder::TreeSink for Dom<'a> {
+impl tree_builder::TreeSink for Dom {
     type Handle = usize;
     type Output = Self;
 
@@ -148,6 +90,7 @@ impl<'a> tree_builder::TreeSink for Dom<'a> {
     }
 
     fn parse_error(&mut self, msg: std::borrow::Cow<'static, str>) {
+        // Whitelist of acceptable HTML errors that can occur with valid djot input
         let whitelist = &[
             "Bad character",       // bad characters in input will pass through
             "Duplicate attribute", // djot is case-sensitive while html is not
@@ -157,30 +100,20 @@ impl<'a> tree_builder::TreeSink for Dom<'a> {
             "Formatting element not current node",
             "Formatting element not open",
         ];
+        
         if !whitelist.iter().any(|e| msg.starts_with(e)) {
-            #[cfg(feature = "debug")]
-            {
-                *self.has_error = true;
-                eprintln!("{}: {}\n", self.line_no, msg);
-            }
-            #[cfg(not(feature = "debug"))]
-            {
-                panic!("invalid html");
-            }
+            panic!("HTML validation error: {}", msg);
         }
     }
 
     fn set_quirks_mode(&mut self, _: tree_builder::QuirksMode) {}
 
-    #[cfg(feature = "debug")]
-    fn set_current_line(&mut self, l: u64) {
-        self.line_no = l;
-    }
-    #[cfg(not(feature = "debug"))]
     fn set_current_line(&mut self, _: u64) {}
 
     fn append(&mut self, _: &usize, _: tree_builder::NodeOrText<usize>) {}
+    
     fn append_before_sibling(&mut self, _: &usize, _: tree_builder::NodeOrText<usize>) {}
+    
     fn append_based_on_parent_node(
         &mut self,
         _: &usize,
@@ -188,6 +121,7 @@ impl<'a> tree_builder::TreeSink for Dom<'a> {
         _: tree_builder::NodeOrText<usize>,
     ) {
     }
+    
     fn append_doctype_to_document(
         &mut self,
         _: tendril::StrTendril,
@@ -195,24 +129,26 @@ impl<'a> tree_builder::TreeSink for Dom<'a> {
         _: tendril::StrTendril,
     ) {
     }
+    
     fn remove_from_parent(&mut self, _: &usize) {}
+    
     fn reparent_children(&mut self, _: &usize, _: &usize) {}
 
     fn mark_script_already_started(&mut self, _: &usize) {}
 
     fn add_attrs_if_missing(&mut self, _: &usize, _: Vec<html5ever::Attribute>) {
-        panic!();
+        panic!("Unexpected call to add_attrs_if_missing");
     }
 
     fn create_pi(&mut self, _: tendril::StrTendril, _: tendril::StrTendril) -> usize {
-        panic!()
+        panic!("Unexpected call to create_pi")
     }
 
     fn get_template_contents(&mut self, _: &usize) -> usize {
-        panic!();
+        panic!("Unexpected call to get_template_contents");
     }
 
     fn create_comment(&mut self, _: tendril::StrTendril) -> usize {
-        panic!()
+        panic!("Unexpected call to create_comment")
     }
 }
