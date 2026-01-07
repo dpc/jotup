@@ -2071,7 +2071,7 @@ impl<'s> PrePass<'s> {
                                     if c.is_ascii_whitespace() {
                                         while chars
                                             .peek()
-                                            .map_or(false, |c| c.is_ascii_whitespace())
+                                            .is_some_and(|c| c.is_ascii_whitespace())
                                         {
                                             chars.next();
                                         }

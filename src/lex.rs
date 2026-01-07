@@ -181,7 +181,7 @@ impl<'s> Lexer<'s> {
                     b'\n' => Newline,
 
                     b'\\' => {
-                        if self.peek_byte().map_or(false, |c| {
+                        if self.peek_byte().is_some_and(|c| {
                             c.is_ascii_whitespace() || c.is_ascii_punctuation()
                         }) {
                             self.escape = !self.verbatim;
