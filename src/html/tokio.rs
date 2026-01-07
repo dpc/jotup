@@ -337,12 +337,12 @@ where
                 self.writer.containers.pop();
                 self.writer
                     .render_epilogue(&mut buffer, &self.indent)
-                    .map_err(|_| io::Error::new(io::ErrorKind::Other, "format error"))?;
+                    .map_err(|_| io::Error::other("format error"))?;
             }
             _ => {
                 self.writer
                     .render_event(event, &mut buffer, &self.indent)
-                    .map_err(|_| io::Error::new(io::ErrorKind::Other, "format error"))?;
+                    .map_err(|_| io::Error::other("format error"))?;
             }
         }
 
@@ -366,17 +366,14 @@ where
     }
 }
 
+#[derive(Default)]
 enum Raw {
+    #[default]
     None,
     Html,
     Other,
 }
 
-impl Default for Raw {
-    fn default() -> Self {
-        Self::None
-    }
-}
 
 struct Writer<'s> {
     depth: usize,
@@ -947,7 +944,7 @@ where
             '"' if escape_quotes => Some("&quot;"),
             _ => None,
         }
-        .map_or(false, |s| {
+        .is_some_and(|s| {
             ent = s;
             true
         })

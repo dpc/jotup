@@ -1,4 +1,4 @@
-use jotup::{Container, Event, Render, RenderExt as _, RenderOutput};
+use jotup::{Container, Event, Render, RenderOutput};
 use std::borrow::Cow;
 
 struct RickrollRenderer<R>(R);
