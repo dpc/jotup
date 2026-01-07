@@ -22,13 +22,7 @@ exclude = [
 ]
 
 [workspace]
-members = [
-  "bench/criterion",
-  "bench/input",
-  "examples/jotup_wasm",
-  "tests/html-ref",
-  "tests/html-ut",
-]
+members = ["bench/criterion", "bench/input", "examples/jotup_wasm"]
 exclude = ["fuzz"]
 resolver = "2"
 

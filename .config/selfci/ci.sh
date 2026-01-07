@@ -3,6 +3,8 @@ set -eou pipefail
 
 
 function job_lint() {
+  set -x
+
   # Get zero-terminated list of non-symlink files (reusable)
   git_ls_files="$(git ls-files -z | while IFS= read -r -d '' file; do
     [ ! -L "$file" ] && printf '%s\0' "$file"
