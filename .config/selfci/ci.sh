@@ -64,10 +64,7 @@ case "$SELFCI_JOB_NAME" in
   main)
     selfci job start "lint"
     selfci job start "cargo"
-
-    # unnecessary, just showing off/dogfooding
-    selfci job wait "lint"
-    selfci job wait "cargo"
+    selfci job start "fuzz"
     ;;
 
   cargo)
@@ -78,6 +75,12 @@ case "$SELFCI_JOB_NAME" in
     # use develop shell to ensure all the tools are provided at pinned versions
     export -f job_lint
     nix develop -c bash -c "job_lint"
+    ;;
+
+  fuzz)
+    nix build .#ci.fuzzParse
+    nix build .#ci.fuzzHtml
+    nix build .#ci.fuzzCompareRenderers
     ;;
 
   *)

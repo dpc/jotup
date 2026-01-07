@@ -56,6 +56,12 @@
           }
         );
 
+        # Nightly toolchain for fuzzing (cargo-fuzz requires nightly)
+        toolchainNightly = flakeboxLib.mkFenixToolchain {
+          channel = "nightly";
+          targets = pkgs.lib.getAttrs [ "default" ] (flakeboxLib.mkStdTargets { });
+        };
+
         buildPaths = [
           "Cargo.toml"
           "Cargo.lock"
@@ -72,6 +78,22 @@
             path = ./.;
           };
           paths = buildPaths;
+        };
+
+        # Source filter for fuzz targets (includes corpus)
+        fuzzSrc = flakeboxLib.filterSubPaths {
+          root = builtins.path {
+            name = "${projectName}-fuzz";
+            path = ./.;
+          };
+          paths = [
+            "Cargo.toml"
+            "Cargo.lock"
+            "src"
+            "fuzz"
+            "fuzz/.*"
+            ".*\\.rs"
+          ];
         };
 
         multiBuild =
@@ -110,6 +132,68 @@
                   # anything and thus not detect anything
                   cargoArtifacts = workspaceDeps;
                 };
+
+                # Fuzz target builder function
+                mkFuzzTarget =
+                  {
+                    target,
+                    fuzzArgs ? "-max_total_time=10 -seed=1",
+                  }:
+                  let
+                    # Use rust-overlay nightly directly
+                    rustNightly = pkgs.rust-bin.nightly.latest.default.override {
+                      extensions = [
+                        "rust-src"
+                        "llvm-tools-preview"
+                      ];
+                    };
+                  in
+                  pkgs.stdenv.mkDerivation {
+                    pname = "${projectName}-fuzz-${target}";
+                    version = "0.9.0";
+                    src = fuzzSrc;
+
+                    cargoDeps = pkgs.rustPlatform.importCargoLock {
+                      lockFile = ./fuzz/Cargo.lock;
+                    };
+
+                    # cargoSetupHook expects this
+                    cargoRoot = "fuzz";
+
+                    nativeBuildInputs = with pkgs; [
+                      rustNightly
+                      cargo-fuzz
+                      rustPlatform.cargoSetupHook
+                    ];
+
+                    buildPhase = ''
+                      export CARGO_HOME=$(mktemp -d cargo-home.XXX)
+                      echo "Building fuzz target: ${target}"
+                      cargo build --manifest-path fuzz/Cargo.toml --bin ${target} --release
+                    '';
+
+                    # Run the fuzz target as a check
+                    doCheck = true;
+                    checkPhase = ''
+                      echo "Running fuzz target: ${target}"
+                      echo "Args: ${fuzzArgs}"
+
+                      # Run with cargo-fuzz
+                      cargo fuzz run ${target} -- ${fuzzArgs}
+                    '';
+
+                    # Create a marker file to indicate success
+                    installPhase = ''
+                      mkdir -p $out
+                      echo "Fuzz target ${target} completed successfully with args: ${fuzzArgs}" > $out/SUCCESS
+                      echo "cargo fuzz run ${target} -- ${fuzzArgs}" > $out/command
+                    '';
+                  };
+
+                # Fuzz target derivations with default 10s runs
+                fuzzParse = mkFuzzTarget { target = "parse"; };
+                fuzzHtml = mkFuzzTarget { target = "html"; };
+                fuzzCompareRenderers = mkFuzzTarget { target = "compare_renderers"; };
               }
             );
         jotup = multiBuild.jotup;
