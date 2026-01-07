@@ -581,9 +581,7 @@ impl<'s> TreeParser<'s> {
             let same_depth = self
                 .open_lists
                 .last()
-                .is_none_or(|OpenList { depth, .. }| {
-                    usize::from(*depth) < self.open.len()
-                });
+                .is_none_or(|OpenList { depth, .. }| usize::from(*depth) < self.open.len());
             if same_depth {
                 let tight = true;
                 let event = self.enter(
@@ -1024,20 +1022,14 @@ impl<'s> IdentifiedBlock<'s> {
                     )
                 }
             }),
-            ':' if chars
-                .clone()
-                .next()
-                .is_none_or(|c| c.is_ascii_whitespace()) =>
-            {
-                Some((
-                    Kind::ListItem {
-                        indent,
-                        ty: Description,
-                        last_blankline: false,
-                    },
-                    indent..(indent + 1),
-                ))
-            }
+            ':' if chars.clone().next().is_none_or(|c| c.is_ascii_whitespace()) => Some((
+                Kind::ListItem {
+                    indent,
+                    ty: Description,
+                    last_blankline: false,
+                },
+                indent..(indent + 1),
+            )),
             f @ ('`' | ':' | '~') => {
                 let fence_length = 1 + (&mut chars).take_while(|c| *c == f).count();
                 let spec =

@@ -336,9 +336,10 @@ impl<'s> Parser<'s> {
                 self.input.lexer.verbatim = false;
                 self.verbatim = None;
                 if raw_format.is_none()
-                    && self.input.peek().is_some_and(|t| {
-                        matches!(t.kind, lex::Kind::Open(Delimiter::Brace))
-                    })
+                    && self
+                        .input
+                        .peek()
+                        .is_some_and(|t| matches!(t.kind, lex::Kind::Open(Delimiter::Brace)))
                 {
                     return self
                         .ahead_attributes(
@@ -836,9 +837,11 @@ impl<'s> Parser<'s> {
                     }
                 };
 
-                if self.input.peek().is_some_and(|t| {
-                    matches!(t.kind, lex::Kind::Open(Delimiter::Brace))
-                }) {
+                if self
+                    .input
+                    .peek()
+                    .is_some_and(|t| matches!(t.kind, lex::Kind::Open(Delimiter::Brace)))
+                {
                     let elem_ty = if matches!(opener, Opener::DoubleQuoted | Opener::SingleQuoted) {
                         // quote delimiters will turn into atoms instead of containers, so cannot
                         // place attributes on the container start

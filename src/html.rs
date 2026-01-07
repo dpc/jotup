@@ -432,7 +432,6 @@ enum Raw {
     Other,
 }
 
-
 struct Writer<'s> {
     depth: usize,
     raw: Raw,
