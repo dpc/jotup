@@ -2,7 +2,7 @@
 name = "jotup"
 description = "A parser for the Djot markup language (dpc's fork of jotdown)"
 authors = ["Noah Hellman <noah@hllmn.net>"]
-version = "0.9.0"
+version = "0.10.0"
 license = "MIT"
 edition = "2021"
 rust-version = "1.82"

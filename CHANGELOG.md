@@ -6,8 +6,15 @@ This project was forked from [jotdown](https://github.com/hellux/jotdown) and re
 
 ## Unreleased
 
-- Add `async` feature with async rendering support.
-- **BREAKING**: Project renamed from `jotdown` to `jotup`.
+## [0.10.0](https://github.com/dpc/jotup/releases/tag/0.10.0) - 2026-01-07
+
+### Added
+
+- Add `async` feature with async rendering support via tokio.
+
+### Changed
+
+- **BREAKING**: Project forked and renamed from `jotdown` to `jotup`
 
 ## [0.9.0](https://github.com/hellux/jotdown/releases/tag/0.9.0) - 2025-10-30
 
